@@ -15,5 +15,7 @@ jobs:
         run: go get .
       - name: Build
         run: go build -v ./...
-      - name: Test
-        run: go test
+      - name: Unit Tests
+        run: go test -v ./...
+      - name: CLI Integration Tests
+        run got test -v main_test.go
