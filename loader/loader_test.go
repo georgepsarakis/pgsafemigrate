@@ -1,6 +1,7 @@
 package loader
 
 import (
+	"fmt"
 	migrate "github.com/rubenv/sql-migrate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -125,6 +126,105 @@ SELECT 3; UPDATE "movies" SET updated_at = CURRENT_TIMESTAMP WHERE id>10;`,
 			statements, err := ParseStatements(tt.input)
 			tt.wantErr(t, err)
 			require.Equal(t, tt.want, statements)
+		})
+	}
+}
+
+func TestScanCommentsFromString(t *testing.T) {
+	tests := []struct {
+		name    string
+		sql     string
+		want    []Comment
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "sql-migrate commands",
+			sql: `-- +migrate Up notransaction
+SELECT 1;
+
+-- +migrate Down
+-- noop`,
+			want: []Comment{
+				{
+					TokenIndex:           1,
+					Content:              `+migrate Up notransaction`,
+					SQLMigrateDirection:  migrate.Up,
+					SQLMigrateAnnotation: true,
+				},
+				{
+					TokenIndex:           5,
+					Content:              `+migrate Down`,
+					SQLMigrateDirection:  migrate.Down,
+					SQLMigrateAnnotation: true,
+				},
+				{
+					TokenIndex:           6,
+					Content:              `noop`,
+					SQLMigrateDirection:  migrate.Down,
+					SQLMigrateAnnotation: false,
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "sql-migrate commands: valid nolint annotation",
+			sql: `-- +migrate Up notransaction
+-- pgsafemigrate:nolint
+SELECT 1;
+
+-- +migrate Down
+-- noop`,
+			want: []Comment{
+				{
+					TokenIndex:           1,
+					Content:              `+migrate Up notransaction`,
+					SQLMigrateDirection:  migrate.Up,
+					SQLMigrateAnnotation: true,
+				},
+				{
+					TokenIndex:           2,
+					Content:              `pgsafemigrate:nolint`,
+					SQLMigrateDirection:  migrate.Up,
+					SQLMigrateAnnotation: false,
+					NoLintAnnotation: annotations.NoLint{
+						Valid: true,
+					},
+				},
+				{
+					TokenIndex:           6,
+					Content:              `+migrate Down`,
+					SQLMigrateDirection:  migrate.Down,
+					SQLMigrateAnnotation: true,
+				},
+				{
+					TokenIndex:           7,
+					Content:              `noop`,
+					SQLMigrateDirection:  migrate.Down,
+					SQLMigrateAnnotation: false,
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "sql-migrate commands: no-lint annotations must be adjacent",
+			sql: `-- +migrate Up notransaction
+SELECT 1;
+-- pgsafemigrate:nolint
+
+-- +migrate Down
+-- noop`,
+			wantErr: assert.Error,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got, err := ScanCommentsFromString(tt.sql)
+			if !tt.wantErr(t, err, fmt.Sprintf("ScanCommentsFromString(%v)", tt.sql)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "ScanCommentsFromString(%v)", tt.sql)
 		})
 	}
 }

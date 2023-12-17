@@ -118,7 +118,7 @@ func ScanCommentsFromString(sql string) ([]Comment, error) {
 		}
 		c := Comment{
 			Content:    sql[token.GetStart()+3 : token.GetEnd()],
-			TokenIndex: i,
+			TokenIndex: i + 1,
 		}
 		c.SQLMigrateAnnotation = strings.HasPrefix(c.Content, "+migrate")
 		if strings.HasPrefix(c.Content, "+migrate Up") {

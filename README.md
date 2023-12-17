@@ -67,6 +67,53 @@ A frequent operation that falls into this category is creating an index concurre
 `pgsafemigrate` assumes all statements are wrapped in a transaction,
 unless the `sql-migrate` `notransaction` command is defined.
 
+## Rules
+
+### High Availability
+
+#### high-availability-alter-column-not-null-exclusive-lock
+
+Setting a column as NOT NULL acquires an exclusive lock on the table until the constraint is validated on all table rows.
+#### high-availability-avoid-non-concurrent-index-creation
+
+Non-concurrent index creation will not allow writes while the index is being built.
+
+#### high-availability-avoid-non-concurrent-index-drop
+
+Non-concurrent index drop will not allow writes while the index is being built.
+
+#### high-availability-avoid-required-column
+
+Newly added columns must either define a default value or be nullable.
+
+#### high-availability-avoid-table-rename
+
+Renaming a table can cause errors in previous application versions.
+
+### Maintainability
+
+#### maintainability-describe-new-column-with-comment
+
+Newly added columns should also include a COMMENT for documentation purposes.
+
+#### maintainability-indexes-name-is-required
+
+Indexes should be explicitly named.
+
+### Transactions
+
+#### transactions-concurrent-index-operation-cannot-be-executed-in-transaction
+
+Concurrent index operations cannot be executed inside a transaction.
+
+#### transactions-index-if-not-exists-missing
+
+Creating/removing an index outside of a transaction without an IF (NOT) EXISTS option can cause a migration to not be idempotent.
+
+#### transactions-no-nested-transactions
+
+Nested transactions are not supported in PostgreSQL.
+
 ## Contributing
 
 ### Adding New Rules

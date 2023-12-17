@@ -102,6 +102,72 @@ ALTER TABLE movies DROP COLUMN released_at;
 			},
 			wantErr: assert.NoError,
 		},
+		{
+			name: "statements with violations",
+			args: args{
+				migrationFile: loader.MigrationFile{
+					Path: "test1.sql",
+					Contents: `
+CREATE INDEX test_idx ON movies(title);
+`,
+				},
+			},
+			want: []StatementResult{
+				{
+					Passed:    false,
+					Direction: migrate.Up,
+					Errors: []ReportedError{
+						Violation{
+							rule:      All()["high-availability-avoid-non-concurrent-index-creation"],
+							statement: "CREATE INDEX test_idx ON movies(title);",
+						},
+					},
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "statements with violations with matching no-lint annotation",
+			args: args{
+				migrationFile: loader.MigrationFile{
+					Path: "test1.sql",
+					Contents: `-- pgsafemigrate:nolint:high-availability-avoid-non-concurrent-index-creation
+CREATE INDEX test_idx ON movies(title);
+`,
+				},
+			},
+			want: []StatementResult{
+				{
+					Passed:    true,
+					Direction: migrate.Up,
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "statements with violations with not matching no-lint annotation",
+			args: args{
+				migrationFile: loader.MigrationFile{
+					Path: "test1.sql",
+					Contents: `-- pgsafemigrate:nolint:high-availability-another-rule
+CREATE INDEX test_idx ON movies(title);
+`,
+				},
+			},
+			want: []StatementResult{
+				{
+					Passed:    false,
+					Direction: migrate.Up,
+					Errors: []ReportedError{
+						Violation{
+							rule:      All()["high-availability-avoid-non-concurrent-index-creation"],
+							statement: "CREATE INDEX test_idx ON movies(title);",
+						},
+					},
+				},
+			},
+			wantErr: assert.NoError,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
