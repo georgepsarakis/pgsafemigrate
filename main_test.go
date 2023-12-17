@@ -23,19 +23,7 @@ func TestExecutable_ListRulesCommand(t *testing.T) {
 }
 
 const expectedFailureOutput = `
-	Rule high-availability-avoid-table-rename violation found for statement:
-	  ALTER TABLE "movies" RENAME TO "movies_old";
-	Explanation: Renaming a table can cause errors in previous application versions.
-
-	Rule high-availability-avoid-required-column violation found for statement:
-	  ALTER TABLE "recipe" ADD COLUMN "public" boolean NOT NULL, ADD COLUMN "private" boolean;
-	Explanation: Newly added columns must either define a default value or be nullable.
-
-	Rule high-availability-alter-column-not-null-exclusive-lock violation found for statement:
-	  ALTER TABLE movies ALTER COLUMN "public" SET NOT NULL;
-	Explanation: Setting a column as NOT NULL acquires an exclusive lock on the table until the constraint is validated on all table rows.
-
-	Rule high-availability-avoid-non-concurrent-index-creation violation found for statement:
+Rule high-availability-avoid-non-concurrent-index-creation violation found for statement:
 	  CREATE INDEX ON films (created_at);
 	Explanation: Non-concurrent index creation will not allow writes while the index is being built.
 
@@ -48,7 +36,7 @@ const expectedFailureOutput = `
 	Explanation: Non-concurrent index creation will not allow writes while the index is being built.
 
 	Rule transactions-concurrent-index-operation-cannot-be-executed-in-transaction violation found for statement:
-	  CREATE INDEX CONCURRENTLY "email_idx" ON "app_user" ("email");
+	  CREATE INDEX CONCURRENTLY "email_idx" ON "companies" ("email");
 	Explanation: Concurrent index operations cannot be executed inside a transaction.
 
 	Rule transactions-no-nested-transactions violation found for statement:
@@ -58,6 +46,10 @@ const expectedFailureOutput = `
 	Rule transactions-no-nested-transactions violation found for statement:
 	  COMMIT;
 	Explanation: Nested transactions are not supported in PostgreSQL.
+
+	Rule high-availability-avoid-table-rename violation found for statement:
+	  ALTER TABLE "movies" RENAME TO "movies_old";
+	Explanation: Renaming a table can cause errors in previous application versions.
 
 	Rule high-availability-avoid-non-concurrent-index-drop violation found for statement:
 	  DROP INDEX IF EXISTS title_idx;

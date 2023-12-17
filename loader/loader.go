@@ -2,7 +2,6 @@ package loader
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	pg_query "github.com/pganalyze/pg_query_go/v4"
 	migrate "github.com/rubenv/sql-migrate"
@@ -76,7 +75,7 @@ func ReadStatementsFromFiles(paths ...string) ([]MigrationFile, error) {
 			return nil, err
 		}
 		if fileInfo.IsDir() {
-			return nil, errors.New(fmt.Sprintf("expected file and %s is a directory", p))
+			return nil, fmt.Errorf("expected file and %s is a directory", p)
 		}
 		sql, err := os.ReadFile(p)
 		if err != nil {

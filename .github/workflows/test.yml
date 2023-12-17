@@ -13,9 +13,11 @@ jobs:
           go-version: '1.21.x'
       - name: Install dependencies
         run: go get .
+      - name: Set up gotestfmt
+        run: go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@latest
       - name: Build
         run: go build -v ./...
       - name: Unit Tests
-        run: go test -v ./...
+        run: go test -v -json -race -coverprofile=cover.out ./... | gotestfmt
       - name: CLI Integration Tests
-        run: go test -v main_test.go
+        run: go test -v -json -race main_test.go | gotestfmt
